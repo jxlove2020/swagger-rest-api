@@ -1,0 +1,72 @@
+swagger 글로벌로 설치  
+`npm i -g swagger`
+
+`swagger project create swaggerProject`
+
+- Framework - express
+
+`cd swaggerProject`  
+`swagger project start` 로 프로젝트 실행
+
+실행이 안 될 경우  
+node_modules/bagpipes/lib/fittingTypes/user.js file의
+
+```js
+var split = err.message.split(path.sep); // 여기 부분을
+var split = err.message.split('\n')[0].split(path.sep); // 이렇게 변경
+```
+
+app.js 파일 수정
+
+```js
+var SwaggerExpress = require('swagger-express-mw');
+// 스웨거 ui 불러오기
+var SwaggerUi = require('swagger-tools/middleware/swagger-ui');
+
+var app = require('express')();
+module.exports = app; // for testing
+
+var config = {
+  appRoot: __dirname, // required config
+  swaggerSecurityHandlers: {
+    api_key: function (req, authOrSecDef, scopesOrApiKey, cb) {
+      // 요청 헤더 값이 api_key 이고, 값이 'my_key'일 경우에만 실행을 허용한다.
+      if ('my_key' === scopesOrApiKey) {
+        cb();
+      } else {
+        cb(new Error('Access Denied!'));
+      }
+    },
+  },
+};
+
+SwaggerExpress.create(config, function (err, swaggerExpress) {
+  if (err) {
+    throw err;
+  }
+  // install middleware
+  swaggerExpress.runner.swagger.host = '127.0.0.1:10010';
+  app.use(SwaggerUi(swaggerExpress.runner.swagger));
+  swaggerExpress.register(app);
+});
+```
+
+swagger 의 api_key 를 사용하고 싶은 경우  
+api > swagger > swagger.yaml 파일의 하단에서
+
+```yaml
+securityDefinitions:
+  api_key:
+    type: apiKey
+    in: query
+    name: api_key
+security:
+  - api_key: []
+# complex objects have schema definitions
+```
+
+- yaml 파일은 띄어쓰기를 잘 적용하여야 오류가 나지 않는다.
+
+`swagger project start` 로 프로젝트 실행하여  
+http://localhost:10010/docs/ 접속하면  
+swagger UI 화면이 적용된 api 화면을 볼수 있다.
